@@ -1,0 +1,61 @@
+SOAL KASUS TEST PT BUMI VARTHA
+
+Berikut adalah detail dari arsitektur microservices aplikasi frontend dan backend
+
+FRONTEND
+Dalam kasus ini saya akan menggunakan React sebagai framework front-end yang dimana didalamnya
+sudah terdapat file Dockerfile untuk konfigurasi docker-nya. Berikut adalah spesifikasi dari aplikasi front end yang dipakai
+- React versi 17 keatas (latest), node versi 12 keatas dan npm versi 6 keatas
+- Terdapat library tambahan berupa redux, react router dom, reactstrap, node-sass, axios dan lain-lain
+- dalam aplikasi react ini, penguna dapat melakukan aktivitas CRUD untuk data user dan katalog.
+- tampilan dalam aplikasi akan berupa tabel untuk masing2 data (user dan katalog) beserta form untik update/create.
+
+BACKEND
+Untuk Backend, saya akan merancang arsitektur microservice ke-dalam 3 endpoint yaitu berupa endpoint utama (orchestrator),
+endpoint untuk user dan endpoint untuk katalog. Endpoint untuk user dan katalog dilindungi dengan token JWT yg didapat dari
+login melalui orchestrator. JWT akan disimpan di header dalam bentuk bearer token.
+Berikut adalah detail dari masing-masing endpoint
+
+Orchestrator
+- Dijalankan dengan nodeJS menggunakan framework expressJS dan axios untuk mengakses endpoint user dan katalog dan beberapa middleware
+- node versi 12 keatas dan npm versi 6 keatas
+- untuk data url endpoint user dan katalog akan didapat di variable jika dalam mode development dan akan didapat di
+env variable jika mode production
+- env variable akan di-set saat aplikasi dijalankan melalui docker bukan di-dalam file .env
+- Jika env variable tidak di-set saat production makan api akan melempar pesan error berupa url tidak diketahui
+- Orchestrator hanya bertugas untuk memanggil endpoint untuk user dan kategori melalui axios
+- Jika terdapat perubahan terhadap enpoint user dan/atau kategori, maka orchestrator dapat di-jalankan ulang melalui docker dengan
+kondisi env variable yang sudah di-set ulang
+- Untuk orchestrator akan dipasang middleware cors supaya saat frontend ingin mengakses orchestrator tidak ter-blokir oleh cors
+
+User
+- Dijalankan dengan nodeJS menggunakan expressJS dan sequelize dan beberapa middleware
+- node versi 12 keatas dan npm versi 6 keatas
+- Database yang digunakan adalah postgres
+- Terdapat migration, seeder, dan ORM yang sudah di-set oleh sequelize
+- untuk penamaan endpoint akan mengikuti aturan Restfull API
+- Token didapat dari login melalui orchestrator
+
+Katalog
+- Untuk tech stack akan sama seperti User, menggunakan nodeJS dengan framework expressJS dan sequelize dan beberapa middleware
+- node versi 12 keatas dan npm versi 6 keatas
+- Database yang digunakan adalah postgres
+- Terdapat migration, seeder, dan ORM yang sudah di-set oleh sequelize
+- penamaan dengan RestFull API sama seperti user
+
+Database untuk service ini akan ditempakna di-server terpisah dengan server backend
+
+Contoh kasus:
+endpoint orchestrator: api.example.com/v1
+endpoint user: user.example.com/v1
+endpoint katalog: katalog.example.com/v1
+
+dari kasus diatas, frontend hanya dapat mengakses api orchestrator api.example.com/v1. Semisal user ingin melihat list user maka, url yang akan ditembak user adalah 
+api.example.com/v1/user dengan method get. Tapi sebelum user dapat mengakses endpoint tersebut, user harus terlebih dahulu login melalui endpoint api.example.com/v1/login. Setelah mendapatkan
+JWT token lewat response api maka user dapat set token tersebut di header dan user dapat mengakses api.example.com/v1/user. Saat user mengakses endpoint api.example.com/v1/user orchestrator 
+akan mendapatkan data header dari user dan request params dan akan dilanjutkan ke url user.example.com/v1, setelah orchestrator mendapatkan response, data response tersebut akan dikirim
+kembali ke user. Begitupun juga dengan katalog, user dapat mengakses dengan url api.example.com/v1/katalog, nanti orchestrator akan melanjutkan request ke endpoint katalog.example.com/v1.
+
+Jika user ingin melakukan create user, endpoint tetap sama api.example.com/v1/user, tetapi method hanya akan diganti ke post dan data akan dikirim melalui body. Jika untuk update menggunakan
+put, dan untuk menghapus data menggunakan delete.
+dan akan mengembalikan response balikan.
